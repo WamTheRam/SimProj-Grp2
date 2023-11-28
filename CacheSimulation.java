@@ -136,15 +136,15 @@ public class CacheSimulation {
                     break;
                 case 2:
                     // Sequential sequence test case
-                    memoryBlocks = generateSequentialSequence(2, 4);
+                    memoryBlocks = generateSequentialSequence(16, 4);
                     break;
                 case 3:
                     // Random sequence test case
-                    memoryBlocks = generateRandomSequence(4);
+                    memoryBlocks = generateRandomSequence(16);
                     break;
                 case 4:
                     // Mid-repeat blocks test case
-                    memoryBlocks = generateMidRepeatBlocks(8, 4);
+                    memoryBlocks = generateMidRepeatBlocks(16, 4);
                     break;
                 default:
                     System.out.println("Invalid option. Please choose a valid option.");
@@ -173,34 +173,46 @@ public class CacheSimulation {
     }
 
     private static int[] generateSequentialSequence(int n, int repeatCount) {
-        int[] sequence = new int[2 * n * repeatCount];
-        for (int i = 0; i < repeatCount; i++) {
-            for (int j = 0; j < 2 * n; j++) {
-                sequence[i * 2 * n + j] = j % n;
-            }
-        }
-        return sequence;
-    }
-
-    private static int[] generateRandomSequence(int n) {
-        Random random = new Random();
-        int[] sequence = new int[4 * n];
-        for (int i = 0; i < 4 * n; i++) {
-            sequence[i] = random.nextInt(n);
-        }
-        return sequence;
-    }
-
-    private static int[] generateMidRepeatBlocks(int n, int repeatCount) {
-        int[] sequence = new int[n * (2 + repeatCount)];
+        int[] sequence = new int[n * repeatCount];
         for (int i = 0; i < repeatCount; i++) {
             for (int j = 0; j < n; j++) {
                 sequence[i * n + j] = j;
             }
         }
-        for (int i = 0; i < n; i++) {
-            sequence[repeatCount * n + i] = i;
+        return sequence;
+    }    
+
+    private static int[] generateRandomSequence(int n) {
+        Random random = new Random();
+        int[] sequence = new int[4 * n];
+        for (int i = 0; i < 4 * n; i++) {
+            sequence[i] = random.nextInt(100); // Generates random integers from 0 to 99
         }
         return sequence;
     }
+    
+    
+
+    private static int[] generateMidRepeatBlocks(int n, int repeatCount) {
+        int[] sequence = new int[(repeatCount * n) + (repeatCount * 2 * n)];
+        int index = 0;
+    
+        // Repeat the inner sequence four times
+        for (int r = 0; r < repeatCount; r++) {
+            // Iterate from 0 to n-1
+            for (int i = 0; i < n; i++) {
+                sequence[index++] = i;
+            }
+    
+            // Iterate from 0 to 2n
+            for (int j = 0; j < 2 * n; j++) {
+                sequence[index++] = j;
+            }
+        }
+    
+        return sequence;
+    }
+    
+    
+    
 }
