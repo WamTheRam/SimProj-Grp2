@@ -38,6 +38,9 @@ public class CacheSimulationGUI {
 
     private int currentMemoryAccessIndex;
 
+    private JFrame mainFrame;
+    private JFrame resultFrame;
+
     public CacheSimulationGUI(int cacheSize, int[] memoryBlocks) {
         this.cacheSize = cacheSize;
 
@@ -59,11 +62,10 @@ public class CacheSimulationGUI {
 
     public void accessMemory(int memoryBlock) {
         memoryAccessCount++;
-    
+
         boolean cacheHit = false;
         int cacheIndex = -1;
-    
-        // Check if the data is in the cache
+
         for (int i = 0; i < cacheSize; i++) {
             CacheBlock block = cache.get(i);
             if (block.valid && block.tag == memoryBlock) {
@@ -73,31 +75,26 @@ public class CacheSimulationGUI {
                 break;
             }
         }
-    
+
         if (!cacheHit) {
             cacheMissCount++;
-    
-            // Check if there is space in the cache
+
             if (fifoQueue.size() < cacheSize) {
                 cacheIndex = fifoQueue.size();
                 fifoQueue.add(cacheIndex);
             } else {
-                // Cache is full, perform FIFO replacement
                 cacheIndex = fifoQueue.poll();
                 fifoQueue.add(cacheIndex);
             }
-    
+
             loadIntoCache(memoryBlock, cacheIndex);
             System.out.println("Miss: Memory Block " + memoryBlock + " in Cache Block " + cacheIndex);
         } else {
-            // Cache hit, print Hit message
             System.out.println("Hit: Memory Block " + memoryBlock + " is stored in Cache Block " + cacheIndex);
         }
-    
-        // Increment the index for the next memory access
+
         currentMemoryAccessIndex++;
     }
-    
 
     private void loadIntoCache(int memoryBlock, int cacheIndex) {
         CacheBlock block = cache.get(cacheIndex);
@@ -118,7 +115,7 @@ public class CacheSimulationGUI {
         double cacheHitRate = (double) cacheHitCount / memoryAccessCount * 100;
         double cacheMissRate = (double) cacheMissCount / memoryAccessCount * 100;
         double averageMemoryAccessTime = (double) memoryAccessCount / (cacheHitCount + cacheMissCount);
-        double totalMemoryAccessTime = (cacheHitCount + 2 * cacheMissCount); // Assuming cache hit time is 1 unit, and cache miss penalty is 2 units
+        double totalMemoryAccessTime = (cacheHitCount + 2 * cacheMissCount);
 
         System.out.println("\n\nCache Statistics:");
         System.out.println("1. Memory Access Count: " + memoryAccessCount);
@@ -130,11 +127,13 @@ public class CacheSimulationGUI {
         System.out.println("7. Total Memory Access Time: " + totalMemoryAccessTime);
     }
 
-    // New method to display the output in a GUI
     public void displayOutputInGUI() {
-        JFrame frame = new JFrame("Cache Simulation Output");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(500, 500);
+        mainFrame = new JFrame("Cache Simulation Output");
+        mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        mainFrame.setSize(500, 500);
+
+        JPanel mainPanel = new JPanel(new GridLayout(2, 2));
+        mainFrame.add(mainPanel);
 
         outputTextArea = new JTextArea();
         outputTextArea.setEditable(false);
@@ -143,54 +142,39 @@ public class CacheSimulationGUI {
         nextButton = new JButton("Next");
         skipButton = new JButton("Skip to Final State");
 
-        // Configure button actions
         nextButton.addActionListener(e -> {
             if (currentMemoryAccessIndex < memoryBlocks.length) {
                 accessMemory(memoryBlocks[currentMemoryAccessIndex]);
                 printCacheSnapshot();
-                
-                // Check if it's the final step
+
                 if (currentMemoryAccessIndex == memoryBlocks.length) {
-                    // Display the final state and summary
-                    printFinalStateAndSummary();
+                    showResultFrame();
                 }
             }
         });
-        
 
         skipButton.addActionListener(e -> {
-        
-            // Skip to the final state
             while (currentMemoryAccessIndex < memoryBlocks.length) {
                 accessMemory(memoryBlocks[currentMemoryAccessIndex]);
                 printCacheSnapshot();
             }
-        
-            // Print the final state and summary
-            printFinalStateAndSummary();
+
+            showResultFrame();
         });
-        
-        
-        
-        
-        
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.add(nextButton);
         buttonPanel.add(skipButton);
 
-        frame.add(scrollPane, BorderLayout.CENTER);
-        frame.add(buttonPanel, BorderLayout.SOUTH);
+        mainFrame.add(scrollPane, BorderLayout.CENTER);
+        mainFrame.add(buttonPanel, BorderLayout.SOUTH);
 
-        // Redirect System.out to the JTextArea
         PrintStream printStream = new PrintStream(new CustomOutputStream(outputTextArea));
         System.setOut(printStream);
 
-        // Display the generated block sequence
         outputTextArea.append("Generated Block Sequence:\n{");
         for (int i = 0; i < memoryBlocks.length; i++) {
             outputTextArea.append(memoryBlocks[i] + ", ");
-            // Add a newline and open curly brace after every 10 numbers
             if ((i + 1) % 10 == 0) {
                 outputTextArea.append("\n");
                 if (i < memoryBlocks.length - 1) {
@@ -199,11 +183,54 @@ public class CacheSimulationGUI {
             }
         }
 
-        // Remove trailing comma and space
         outputTextArea.replaceRange("", outputTextArea.getText().length() - 2, outputTextArea.getText().length());
         outputTextArea.append("\n}\n\n");
 
-        frame.setVisible(true);
+        mainFrame.setVisible(true);
+    }
+
+    private void showResultFrame() {
+        resultFrame = new JFrame("Cache Simulation Result");
+        resultFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        resultFrame.setSize(500, 500);
+
+        outputTextArea = new JTextArea();
+        outputTextArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(outputTextArea);
+
+        JButton tryNewSequenceButton = new JButton("Try a New Memory Block Sequence");
+
+        tryNewSequenceButton.addActionListener(e -> {
+            resultFrame.dispose();
+            mainFrame.setVisible(true);
+        });
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(tryNewSequenceButton);
+
+        resultFrame.add(scrollPane, BorderLayout.CENTER);
+        resultFrame.add(buttonPanel, BorderLayout.SOUTH);
+
+        PrintStream printStream = new PrintStream(new CustomOutputStream(outputTextArea));
+        System.setOut(printStream);
+
+        outputTextArea.append("Generated Block Sequence:\n{");
+        for (int i = 0; i < memoryBlocks.length; i++) {
+            outputTextArea.append(memoryBlocks[i] + ", ");
+            if ((i + 1) % 10 == 0) {
+                outputTextArea.append("\n");
+                if (i < memoryBlocks.length - 1) {
+                    outputTextArea.append(" ");
+                }
+            }
+        }
+
+        outputTextArea.replaceRange("", outputTextArea.getText().length() - 2, outputTextArea.getText().length());
+        outputTextArea.append("\n}\n\n");
+
+        printFinalStateAndSummary();
+
+        resultFrame.setVisible(true);
     }
 
     private void printFinalStateAndSummary() {
@@ -213,12 +240,10 @@ public class CacheSimulationGUI {
             System.out.println("Block " + i + ": " + (block.valid ? "Contains Memory Block " + block.tag : "Empty"));
         }
 
-        // Display cache statistics
         printCacheStatistics();
     }
 
     public static void main(String[] args) {
-        // Run GUI in the event dispatch thread to ensure thread safety
         SwingUtilities.invokeLater(() -> {
             JFrame welcomeFrame = new JFrame("Welcome");
             welcomeFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -227,25 +252,21 @@ public class CacheSimulationGUI {
             JPanel welcomePanel = new JPanel(new GridLayout(2, 2));
             welcomeFrame.add(welcomePanel);
 
-            // Create buttons
             JButton customInputButton = new JButton("Enter Custom Sequence");
             JButton sequentialButton = new JButton("Use Sequential Sequence");
             JButton randomButton = new JButton("Use Random Sequence");
             JButton midRepeatButton = new JButton("Use Mid-Repeat Blocks");
 
-            // Add buttons to the panel
             welcomePanel.add(customInputButton);
             welcomePanel.add(sequentialButton);
             welcomePanel.add(randomButton);
             welcomePanel.add(midRepeatButton);
 
-            // Configure button actions
             customInputButton.addActionListener(e -> handleButtonClick(1));
             sequentialButton.addActionListener(e -> handleButtonClick(2));
             randomButton.addActionListener(e -> handleButtonClick(3));
             midRepeatButton.addActionListener(e -> handleButtonClick(4));
 
-            // Make the frame visible
             welcomeFrame.setVisible(true);
         });
     }
@@ -255,37 +276,31 @@ public class CacheSimulationGUI {
 
         switch (option) {
             case 1:
-                // User input for the sequence of memory blocks
                 String input = JOptionPane.showInputDialog("Enter the sequence of memory blocks (comma-separated): ");
                 if (input != null) {
                     String[] blocksInput = input.split(",");
                     cacheSimulationGUI = new CacheSimulationGUI(16, Arrays.stream(blocksInput).mapToInt(Integer::parseInt).toArray());
                 } else {
-                    return; // User canceled input
+                    return;
                 }
                 break;
             case 2:
-                // Sequential sequence test case
                 cacheSimulationGUI = new CacheSimulationGUI(16, generateSequentialSequence(16, 4));
                 break;
             case 3:
-                // Random sequence test case
                 cacheSimulationGUI = new CacheSimulationGUI(16, generateRandomSequence(16));
                 break;
             case 4:
-                // Mid-repeat blocks test case
                 cacheSimulationGUI = new CacheSimulationGUI(16, generateMidRepeatBlocks(16, 4));
                 break;
             default:
-                return; // Invalid option
+                return;
         }
 
-        // Display generated block sequence
         System.out.println("Generated Block Sequence:");
         System.out.println(Arrays.toString(cacheSimulationGUI.memoryBlocks));
         System.out.println();
 
-        // Cache simulation setup and display in GUI
         cacheSimulationGUI.displayOutputInGUI();
     }
 
@@ -303,7 +318,7 @@ public class CacheSimulationGUI {
         Random random = new Random();
         int[] sequence = new int[4 * n];
         for (int i = 0; i < 4 * n; i++) {
-            sequence[i] = random.nextInt(100); // Generates random integers from 0 to 99
+            sequence[i] = random.nextInt(100);
         }
         return sequence;
     }
@@ -312,14 +327,11 @@ public class CacheSimulationGUI {
         int[] sequence = new int[(repeatCount * n) + (repeatCount * 2 * n)];
         int index = 0;
 
-        // Repeat the inner sequence four times
         for (int r = 0; r < repeatCount; r++) {
-            // Iterate from 0 to n-1
             for (int i = 0; i < n; i++) {
                 sequence[index++] = i;
             }
 
-            // Iterate from 0 to 2n
             for (int j = 0; j < 2 * n; j++) {
                 sequence[index++] = j;
             }
@@ -328,7 +340,6 @@ public class CacheSimulationGUI {
         return sequence;
     }
 
-    // CustomOutputStream class to redirect System.out to a JTextArea
     static class CustomOutputStream extends OutputStream {
         private JTextArea textArea;
 
@@ -338,7 +349,6 @@ public class CacheSimulationGUI {
 
         @Override
         public void write(int b) throws IOException {
-            // Redirect the byte to the JTextArea
             textArea.append(String.valueOf((char) b));
             textArea.setCaretPosition(textArea.getDocument().getLength());
         }
