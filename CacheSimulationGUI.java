@@ -129,8 +129,8 @@ public class CacheSimulationGUI {
 
         //AccessTime Calculation
         double averageMemoryAccessTime = (cacheHitRate * assumedCacheAccessTime) + (cacheMissRate * missPenalty);
-        double totalMemoryAccessTime = (cacheHitCount * numOfWordsPerBlock * assumedCacheAccessTime) + 
-                                        (cacheMissCount * numOfWordsPerBlock* assumedMemoryAccessTime);
+        double totalMemoryAccessTime = ((cacheHitCount * numOfWordsPerBlock * assumedCacheAccessTime) + 
+                                        (cacheMissCount * numOfWordsPerBlock* assumedMemoryAccessTime));
 
         System.out.println("\n\nCache Statistics:");
         System.out.println("1. Memory Access Count: " + memoryAccessCount);
@@ -320,14 +320,15 @@ public class CacheSimulationGUI {
     }
 
     private static int[] generateSequentialSequence(int n, int repeatCount) {
-        int[] sequence = new int[n * repeatCount];
+        int[] sequence = new int[2 * n * repeatCount];
         for (int i = 0; i < repeatCount; i++) {
-            for (int j = 0; j < n; j++) {
-                sequence[i * n + j] = j;
+            for (int j = 0; j < 2 * n; j++) {
+                sequence[i * 2 * n + j] = j % (2 * n);
             }
         }
         return sequence;
     }
+    
 
     private static int[] generateRandomSequence(int n) {
         Random random = new Random();
