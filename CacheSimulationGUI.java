@@ -112,10 +112,25 @@ public class CacheSimulationGUI {
     }
 
     public void printCacheStatistics() {
+        //Common Specification
+        double numOfCacheBlocks = 16;
+        double numOfWordsPerBlock = 32;
+
+        //assume cache access time is 1unit and memory access is 10unit
+        double assumedCacheAccessTime = 1;
+        double assumedMemoryAccessTime = 10;
+
+        //loadthrough
+        double missPenalty = assumedCacheAccessTime + assumedMemoryAccessTime + assumedCacheAccessTime;
+
+        //cache miss and hit rate
         double cacheHitRate = (double) cacheHitCount / memoryAccessCount * 100;
         double cacheMissRate = (double) cacheMissCount / memoryAccessCount * 100;
-        double averageMemoryAccessTime = (double) memoryAccessCount / (cacheHitCount + cacheMissCount);
-        double totalMemoryAccessTime = (cacheHitCount + 2 * cacheMissCount);
+
+        //AccessTime Calculation
+        double averageMemoryAccessTime = (cacheHitRate * assumedCacheAccessTime) + (cacheMissRate * missPenalty);
+        double totalMemoryAccessTime = (cacheHitCount * numOfWordsPerBlock * assumedCacheAccessTime) + 
+                                        (cacheMissCount * numOfWordsPerBlock* assumedMemoryAccessTime);
 
         System.out.println("\n\nCache Statistics:");
         System.out.println("1. Memory Access Count: " + memoryAccessCount);
